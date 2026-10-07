@@ -506,7 +506,52 @@
 </main>
 
 
-<script>
+<script type="module">
+
+  /* =========================================================
+     FIREBASE
+     ========================================================= */
+
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+  import {
+    getDatabase,
+    ref,
+    set,
+    get
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZdgPX3CRW4wz1JlGE6TFHQdypWrGfI0w",
+    authDomain: "desafio-neurocognitivo.firebaseapp.com",
+    databaseURL: "https://desafio-neurocognitivo-default-rtdb.firebaseio.com",
+    projectId: "desafio-neurocognitivo",
+    storageBucket: "desafio-neurocognitivo.firebasestorage.app",
+    messagingSenderId: "734507714007",
+    appId: "1:734507714007:web:06553e9b2a43006363f792"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+
+  const auth = getAuth(app);
+
+  const database = getDatabase(app);
+
+  let usuarioAtual = null;
+
+
+  /* =========================================================
+     ALTERNATIVAS
+     ========================================================= */
 
   const alternativas = [
     "Doença de Alzheimer",
@@ -517,7 +562,9 @@
   ];
 
 
-  // CRIA AS ALTERNATIVAS EM TODOS OS CASOS
+  /* =========================================================
+     CRIA AS ALTERNATIVAS
+     ========================================================= */
 
   document.querySelectorAll(".opcoes").forEach(container => {
 
@@ -540,9 +587,15 @@
 
       label.addEventListener("click", () => {
 
+        if (
+          label.querySelector("input").disabled
+        ) return;
+
         container
           .querySelectorAll(".opcao")
-          .forEach(el => el.classList.remove("selecionada"));
+          .forEach(el =>
+            el.classList.remove("selecionada")
+          );
 
         label.classList.add("selecionada");
 
@@ -555,55 +608,60 @@
   });
 
 
-  // ABRE E FECHA OS CASOS
+  /* =========================================================
+     ABRIR / FECHAR CASOS
+     ========================================================= */
 
-  function abrirCaso(elemento) {
+  window.abrirCaso = function(elemento) {
 
-    const caso = elemento.closest(".caso");
+    const caso =
+      elemento.closest(".caso");
 
     caso.classList.toggle("aberto");
 
-  }
+  };
 
 
-  // VOTAÇÃO
-  // NESTA PRIMEIRA VERSÃO O FIREBASE AINDA SERÁ CONECTADO.
+  /* =========================================================
+     MOSTRAR VOTO JÁ REGISTRADO
+     ========================================================= */
 
-  function votar(numeroCaso, botao) {
+  function bloquearCaso(numeroCaso, valor) {
 
-    const selecionado =
+    const container =
       document.querySelector(
-        `input[name="caso${numeroCaso}"]:checked`
+        `.opcoes[data-caso="${numeroCaso}"]`
       );
 
-    if (!selecionado) {
+    if (!container) return;
 
-      alert("Selecione uma hipótese antes de votar.");
+    const inputs =
+      container.querySelectorAll("input");
 
-      return;
-    }
+    inputs.forEach(input => {
 
-    const chave =
-      `desafio_neuro_caso_${numeroCaso}`;
+      input.disabled = true;
 
-    if (localStorage.getItem(chave)) {
+      if (
+        Number(input.value) === Number(valor)
+      ) {
 
-      alert("Você já registrou uma resposta para este caso.");
+        input.checked = true;
 
-      return;
-    }
+        input
+          .closest(".opcao")
+          .classList.add("selecionada");
 
-    localStorage.setItem(
-      chave,
-      selecionado.value
-    );
+      }
+
+    });
+
 
     const conteudo =
-      botao.closest(".conteudo");
+      container.closest(".conteudo");
 
-    conteudo
-      .querySelectorAll("input")
-      .forEach(input => input.disabled = true);
+    const botao =
+      conteudo.querySelector(".votar");
 
     botao.disabled = true;
 
@@ -615,6 +673,200 @@
       .style.display = "block";
 
   }
+
+
+  /* =========================================================
+     VERIFICA VOTOS EXISTENTES
+     ========================================================= */
+
+  async function carregarVotosExistentes() {
+
+    if (!usuarioAtual) return;
+
+    for (
+      let numeroCaso = 1;
+      numeroCaso <= 5;
+      numeroCaso++
+    ) {
+
+      try {
+
+        const votoRef = ref(
+          database,
+          `votos/caso${numeroCaso}/${usuarioAtual.uid}`
+        );
+
+        const snapshot =
+          await get(votoRef);
+
+        if (snapshot.exists()) {
+
+          bloquearCaso(
+            numeroCaso,
+            snapshot.val()
+          );
+
+        }
+
+      } catch (erro) {
+
+        console.error(
+          "Erro ao verificar voto:",
+          erro
+        );
+
+      }
+
+    }
+
+  }
+
+
+  /* =========================================================
+     REGISTRAR VOTO
+     ========================================================= */
+
+  window.votar = async function(
+    numeroCaso,
+    botao
+  ) {
+
+    if (!usuarioAtual) {
+
+      alert(
+        "Aguarde alguns segundos. Estamos conectando a atividade."
+      );
+
+      return;
+
+    }
+
+
+    const selecionado =
+      document.querySelector(
+        `input[name="caso${numeroCaso}"]:checked`
+      );
+
+
+    if (!selecionado) {
+
+      alert(
+        "Selecione uma hipótese antes de votar."
+      );
+
+      return;
+
+    }
+
+
+    botao.disabled = true;
+
+    botao.textContent =
+      "REGISTRANDO...";
+
+
+    try {
+
+      const votoRef = ref(
+        database,
+        `votos/caso${numeroCaso}/${usuarioAtual.uid}`
+      );
+
+
+      /*
+        Primeiro verificamos se já existe voto.
+        A regra do Firebase também impede
+        qualquer sobrescrita.
+      */
+
+      const snapshot =
+        await get(votoRef);
+
+
+      if (snapshot.exists()) {
+
+        bloquearCaso(
+          numeroCaso,
+          snapshot.val()
+        );
+
+        alert(
+          "Você já registrou uma resposta para este caso."
+        );
+
+        return;
+
+      }
+
+
+      await set(
+        votoRef,
+        Number(selecionado.value)
+      );
+
+
+      bloquearCaso(
+        numeroCaso,
+        selecionado.value
+      );
+
+
+    } catch (erro) {
+
+      console.error(
+        "Erro ao registrar voto:",
+        erro
+      );
+
+
+      botao.disabled = false;
+
+      botao.textContent =
+        "VOTAR";
+
+
+      alert(
+        "Não foi possível registrar sua resposta. Verifique sua conexão e tente novamente."
+      );
+
+    }
+
+  };
+
+
+  /* =========================================================
+     AUTENTICAÇÃO ANÔNIMA
+     ========================================================= */
+
+  onAuthStateChanged(
+    auth,
+    async usuario => {
+
+      if (usuario) {
+
+        usuarioAtual = usuario;
+
+        await carregarVotosExistentes();
+
+      }
+
+    }
+  );
+
+
+  signInAnonymously(auth)
+    .catch(erro => {
+
+      console.error(
+        "Erro na autenticação:",
+        erro
+      );
+
+      alert(
+        "Não foi possível conectar a atividade ao servidor."
+      );
+
+    });
 
 </script>
 
