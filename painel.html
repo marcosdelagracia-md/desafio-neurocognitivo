@@ -62,7 +62,81 @@
       margin-bottom: 22px;
       font-size: 15px;
       color: var(--cinza);
-    }
+    } /* =========================================
+   CONTROLE DO PROFESSOR
+   ========================================= */
+
+.controle-professor {
+    max-width: 850px;
+    margin: 0 auto 24px auto;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 1px solid var(--borda);
+    border-radius: 14px;
+    text-align: center;
+}
+
+#areaLoginProfessor,
+#areaProfessorLogado {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controle-professor input {
+    padding: 11px 14px;
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    font-size: 14px;
+    min-width: 220px;
+    background: #ffffff;
+    color: var(--texto);
+}
+
+.controle-professor input:focus {
+    outline: 2px solid var(--verde);
+    outline-offset: 1px;
+}
+
+#btnLoginProfessor,
+#btnSairProfessor {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 9px;
+    background: var(--verde);
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#btnZerarVotacao {
+    padding: 11px 22px;
+    border: none;
+    border-radius: 9px;
+    background: var(--terracota);
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#btnLoginProfessor:hover,
+#btnSairProfessor:hover,
+#btnZerarVotacao:hover {
+    opacity: 0.88;
+}
+
+#mensagemProfessor {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--cinza);
+}
+
+#areaProfessorLogado span {
+    font-weight: 700;
+    color: var(--verde);
+}
 
     .status-bolinha {
       width: 10px;
@@ -280,7 +354,44 @@
     <span id="statusBolinha" class="status-bolinha"></span>
     <span id="statusTexto">Conectando ao Firebase...</span>
   </div>
+<!-- CONTROLE DO PROFESSOR -->
+<div id="controleProfessor" class="controle-professor">
 
+    <div id="areaLoginProfessor">
+        <input
+            type="email"
+            id="emailProfessor"
+            placeholder="E-mail do professor"
+            autocomplete="username"
+        >
+
+        <input
+            type="password"
+            id="senhaProfessor"
+            placeholder="Senha"
+            autocomplete="current-password"
+        >
+
+        <button id="btnLoginProfessor" type="button">
+            ENTRAR
+        </button>
+    </div>
+
+    <div id="areaProfessorLogado" style="display:none;">
+        <span>Professor conectado</span>
+
+        <button id="btnZerarVotacao" type="button">
+            ZERAR VOTAÇÃO
+        </button>
+
+        <button id="btnSairProfessor" type="button">
+            SAIR
+        </button>
+    </div>
+
+    <div id="mensagemProfessor"></div>
+
+</div>
   <div class="navegacao">
     <button class="botao-caso ativo" data-caso="1">Caso 1</button>
     <button class="botao-caso" data-caso="2">Caso 2</button>
@@ -329,17 +440,18 @@
   import { initializeApp }
     from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
-  import {
-    getAuth,
-    signInAnonymously,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-
-  import {
-    getDatabase,
-    ref,
-    onValue
-  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+ import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  onValue,
+  remove
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
 
   /* =====================================================
@@ -360,7 +472,126 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const database = getDatabase(app);
+/* ==================================================
+   CONTROLE DO PROFESSOR
+   ================================================== */
 
+const PROFESSOR_UID = "sJqJvyvb60XkqCDW8oCsxRKVZS23";
+
+const areaLoginProfessor = document.getElementById("areaLoginProfessor");
+const areaProfessorLogado = document.getElementById("areaProfessorLogado");
+const emailProfessor = document.getElementById("emailProfessor");
+const senhaProfessor = document.getElementById("senhaProfessor");
+const btnLoginProfessor = document.getElementById("btnLoginProfessor");
+const btnZerarVotacao = document.getElementById("btnZerarVotacao");
+const btnSairProfessor = document.getElementById("btnSairProfessor");
+const mensagemProfessor = document.getElementById("mensagemProfessor");
+
+
+/* LOGIN DO PROFESSOR */
+
+btnLoginProfessor.addEventListener("click", async () => {
+
+    const email = emailProfessor.value.trim();
+    const senha = senhaProfessor.value;
+
+    mensagemProfessor.textContent = "";
+
+    if (!email || !senha) {
+        mensagemProfessor.textContent =
+            "Digite o e-mail e a senha.";
+        return;
+    }
+
+    try {
+
+        const credencial = await signInWithEmailAndPassword(
+            auth,
+            email,
+            senha
+        );
+
+        if (credencial.user.uid !== PROFESSOR_UID) {
+
+            await signOut(auth);
+
+            mensagemProfessor.textContent =
+                "Usuário não autorizado.";
+
+            return;
+        }
+
+        mensagemProfessor.textContent =
+            "Professor autenticado.";
+
+        senhaProfessor.value = "";
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        mensagemProfessor.textContent =
+            "Não foi possível entrar. Verifique e-mail e senha.";
+    }
+
+});
+
+
+/* ZERAR TODA A VOTAÇÃO */
+
+btnZerarVotacao.addEventListener("click", async () => {
+
+    const usuario = auth.currentUser;
+
+    if (!usuario || usuario.uid !== PROFESSOR_UID) {
+        mensagemProfessor.textContent =
+            "Ação não autorizada.";
+        return;
+    }
+
+    const confirmar = window.confirm(
+        "Deseja realmente apagar TODOS os votos dos 5 casos?"
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+
+        await remove(ref(database, "votos"));
+
+        mensagemProfessor.textContent =
+            "Votação zerada com sucesso.";
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        mensagemProfessor.textContent =
+            "Não foi possível zerar a votação.";
+    }
+
+});
+
+
+/* SAIR DO PAINEL DO PROFESSOR */
+
+btnSairProfessor.addEventListener("click", async () => {
+
+    try {
+
+        await signOut(auth);
+
+        mensagemProfessor.textContent =
+            "Sessão encerrada.";
+
+    } catch (erro) {
+
+        console.error(erro);
+    }
+
+});
 
   /* =====================================================
      DADOS DOS CASOS
@@ -664,39 +895,43 @@ criarResultados();
      AUTENTICAÇÃO
      ===================================================== */
 
-  onAuthStateChanged(
+onAuthStateChanged(
     auth,
     usuario => {
 
-      if (usuario) {
+        if (usuario && usuario.uid === PROFESSOR_UID) {
 
-        statusTexto.textContent =
-          "Conectado • resultados em tempo real";
+            // Professor autenticado
+            areaLoginProfessor.style.display = "none";
+            areaProfessorLogado.style.display = "flex";
 
-        statusBolinha.classList.add(
-          "online"
-        );
+            statusTexto.textContent =
+                "Conectado • professor autenticado";
 
-        carregarCaso(casoAtual);
+            statusBolinha.classList.add("online");
 
-      }
+            carregarCaso(casoAtual);
+
+        } else {
+
+            // Professor não autenticado
+            areaLoginProfessor.style.display = "flex";
+            areaProfessorLogado.style.display = "none";
+
+            statusTexto.textContent =
+                "Painel conectado • faça login para administrar";
+
+            statusBolinha.classList.add("online");
+
+            // Os resultados continuam visíveis
+            carregarCaso(casoAtual);
+        }
 
     }
-  );
+);
 
 
-  signInAnonymously(auth)
-    .catch(erro => {
 
-      console.error(
-        "Erro de autenticação:",
-        erro
-      );
-
-      statusTexto.textContent =
-        "Não foi possível conectar ao Firebase.";
-
-    });
 
 </script>
 
