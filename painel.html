@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Painel do Professor | Desafio Neurocognitivo</title>
+
+  <style>
+    :root {
+      --fundo: #f7f9f0;
+      --card: #ffffff;
+      --verde: #766f54;
+      --verde-claro: #eef1de;
+      --terracota: #a53010;
+      --texto: #353830;
+      --borda: #dce0c7;
+      --cinza: #777b75;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--fundo);
+      color: var(--texto);
+    }
+
+    header {
+      background: var(--verde);
+      color: white;
+      padding: 26px 30px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 34px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 17px;
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 20px 50px;
+    }
+
+    .status {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      font-size: 15px;
+      color: var(--cinza);
+    }
+
+    .status-bolinha {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #c4c4c4;
+    }
+
+    .status-bolinha.online {
+      background: #668c55;
+    }
+
+    .navegacao {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .botao-caso {
+      border: 1px solid var(--borda);
+      background: white;
+      color: var(--verde);
+      padding: 12px 19px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .botao-caso:hover {
+      border-color: var(--verde);
+    }
+
+    .botao-caso.ativo {
+      background: var(--verde);
+      color: white;
+      border-color: var(--verde);
+    }
+
+    .painel {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 24px;
+      padding: 34px 38px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
+
+    .rotulo {
+      color: var(--terracota);
+      font-weight: bold;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .titulo-caso {
+      font-family: "Times New Roman", Times, serif;
+      color: var(--verde);
+      font-size: 34px;
+      margin: 0 0 5px;
+    }
+
+    .subtitulo {
+      margin: 0;
+      font-size: 17px;
+      color: var(--cinza);
+    }
+
+    .resumo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 28px 0 30px;
+      padding: 18px 22px;
+      background: var(--verde-claro);
+      border-radius: 15px;
+    }
+
+    .resumo-texto {
+      font-size: 17px;
+    }
+
+    .total {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 34px;
+      font-weight: bold;
+      color: var(--terracota);
+      white-space: nowrap;
+    }
+
+    .resultado {
+      margin-bottom: 22px;
+    }
+
+    .resultado-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 7px;
+    }
+
+    .nome {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .numeros {
+      font-size: 17px;
+      font-weight: bold;
+      color: var(--verde);
+      white-space: nowrap;
+    }
+
+    .barra-fundo {
+      width: 100%;
+      height: 26px;
+      background: #eceee6;
+      border-radius: 13px;
+      overflow: hidden;
+    }
+
+    .barra {
+      width: 0%;
+      height: 100%;
+      background: var(--verde);
+      border-radius: 13px;
+      transition: width 0.6s ease;
+    }
+
+    .resultado.mais-votada .nome,
+    .resultado.mais-votada .numeros {
+      color: var(--terracota);
+    }
+
+    .resultado.mais-votada .barra {
+      background: var(--terracota);
+    }
+
+    .rodape-painel {
+      border-top: 1px solid var(--borda);
+      margin-top: 32px;
+      padding-top: 20px;
+      text-align: center;
+      color: var(--cinza);
+      font-size: 15px;
+    }
+
+    .sem-votos {
+      padding: 35px 20px;
+      text-align: center;
+      color: var(--cinza);
+      font-size: 18px;
+    }
+
+    @media (max-width: 700px) {
+      header h1 {
+        font-size: 28px;
+      }
+
+      .painel {
+        padding: 25px 20px;
+      }
+
+      .titulo-caso {
+        font-size: 29px;
+      }
+
+      .resumo {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .resultado-topo {
+        align-items: flex-start;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1250px;
+      }
+
+      .nome {
+        font-size: 20px;
+      }
+
+      .barra-fundo {
+        height: 30px;
+        border-radius: 15px;
+      }
+
+      .barra {
+        border-radius: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Desafio Neurocognitivo</h1>
+  <p>Painel do professor • votação da turma em tempo real</p>
+</header>
+
+<div class="container">
+
+  <div class="status">
+    <span id="statusBolinha" class="status-bolinha"></span>
+    <span id="statusTexto">Conectando ao Firebase...</span>
+  </div>
+
+  <div class="navegacao">
+    <button class="botao-caso ativo" data-caso="1">Caso 1</button>
+    <button class="botao-caso" data-caso="2">Caso 2</button>
+    <button class="botao-caso" data-caso="3">Caso 3</button>
+    <button class="botao-caso" data-caso="4">Caso 4</button>
+    <button class="botao-caso" data-caso="5">Caso 5</button>
+  </div>
+
+  <section class="painel">
+
+    <div class="rotulo" id="rotuloCaso">CASO 1</div>
+
+    <h2 class="titulo-caso" id="tituloCaso">
+      Dona Beatriz
+    </h2>
+
+    <p class="subtitulo">
+      Qual hipótese etiológica foi mais escolhida pela turma?
+    </p>
+
+    <div class="resumo">
+      <div class="resumo-texto">
+        Respostas registradas neste caso
+      </div>
+
+      <div class="total">
+        <span id="totalVotos">0</span>
+        <span style="font-size:18px;"> votos</span>
+      </div>
+    </div>
+
+    <div id="resultados"></div>
+
+    <div class="rodape-painel">
+      O resultado da turma é uma hipótese coletiva —
+      não o gabarito do caso.
+    </div>
+
+  </section>
+
+</div>
+
+
+<script type="module">
+
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+  import {
+    getDatabase,
+    ref,
+    onValue
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+
+  /* =====================================================
+     CONFIGURAÇÃO DO FIREBASE
+     ===================================================== */
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZdgPX3CRW4wz1JlGE6TFHQdypWrGfI0w",
+    authDomain: "desafio-neurocognitivo.firebaseapp.com",
+    databaseURL: "https://desafio-neurocognitivo-default-rtdb.firebaseio.com",
+    projectId: "desafio-neurocognitivo",
+    storageBucket: "desafio-neurocognitivo.firebasestorage.app",
+    messagingSenderId: "734507714007",
+    appId: "1:734507714007:web:06553e9b2a43006363f792"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const database = getDatabase(app);
+
+
+  /* =====================================================
+     DADOS DOS CASOS
+     ===================================================== */
+
+  const casos = {
+    1: {
+      nome: "Dona Beatriz"
+    },
+
+    2: {
+      nome: "Sr. Álvaro"
+    },
+
+    3: {
+      nome: "Dona Cecília"
+    },
+
+    4: {
+      nome: "Sr. Renato"
+    },
+
+    5: {
+      nome: "Dona Lúcia"
+    }
+  };
+
+
+  const alternativas = [
+    "Doença de Alzheimer",
+    "Transtorno Neurocognitivo Vascular",
+    "Transtorno Neurocognitivo com Corpos de Lewy",
+    "Transtorno Neurocognitivo Frontotemporal",
+    "Delirium"
+  ];
+
+
+  let casoAtual = 1;
+
+  let cancelarEscuta = null;
+
+
+  /* =====================================================
+     ELEMENTOS
+     ===================================================== */
+
+  const resultados =
+    document.getElementById("resultados");
+
+  const totalVotos =
+    document.getElementById("totalVotos");
+
+  const tituloCaso =
+    document.getElementById("tituloCaso");
+
+  const rotuloCaso =
+    document.getElementById("rotuloCaso");
+
+  const statusTexto =
+    document.getElementById("statusTexto");
+
+  const statusBolinha =
+    document.getElementById("statusBolinha");
+
+
+  /* =====================================================
+     CRIA AS BARRAS
+     ===================================================== */
+
+  function criarResultados() {
+
+    resultados.innerHTML = "";
+
+    alternativas.forEach((alternativa, indice) => {
+
+      const bloco =
+        document.createElement("div");
+
+      bloco.className = "resultado";
+
+      bloco.dataset.indice = indice;
+
+      bloco.innerHTML = `
+        <div class="resultado-topo">
+          <div class="nome">
+            ${alternativa}
+          </div>
+
+          <div class="numeros">
+            <span class="quantidade">0</span>
+            voto(s) •
+            <span class="percentual">0%</span>
+          </div>
+        </div>
+
+        <div class="barra-fundo">
+          <div class="barra"></div>
+        </div>
+      `;
+
+      resultados.appendChild(bloco);
+
+    });
+
+  }
+
+
+  /* =====================================================
+     ATUALIZA RESULTADOS
+     ===================================================== */
+
+  function atualizarResultados(dados) {
+
+    const contagem = [0, 0, 0, 0, 0];
+
+    if (dados) {
+
+      Object.values(dados).forEach(voto => {
+
+        const numero = Number(voto);
+
+        if (
+          Number.isInteger(numero) &&
+          numero >= 0 &&
+          numero <= 4
+        ) {
+          contagem[numero]++;
+        }
+
+      });
+
+    }
+
+
+    const total =
+      contagem.reduce(
+        (soma, valor) => soma + valor,
+        0
+      );
+
+
+    totalVotos.textContent = total;
+
+
+    const maiorQuantidade =
+      total > 0
+        ? Math.max(...contagem)
+        : -1;
+
+
+    document
+      .querySelectorAll(".resultado")
+      .forEach((bloco, indice) => {
+
+        const quantidade =
+          contagem[indice];
+
+        const percentual =
+          total > 0
+            ? (quantidade / total) * 100
+            : 0;
+
+
+        bloco
+          .querySelector(".quantidade")
+          .textContent = quantidade;
+
+
+        bloco
+          .querySelector(".percentual")
+          .textContent =
+            percentual.toFixed(1)
+              .replace(".0", "") + "%";
+
+
+        bloco
+          .querySelector(".barra")
+          .style.width =
+            percentual + "%";
+
+
+        bloco.classList.remove(
+          "mais-votada"
+        );
+
+
+        if (
+          total > 0 &&
+          quantidade === maiorQuantidade &&
+          quantidade > 0
+        ) {
+          bloco.classList.add(
+            "mais-votada"
+          );
+        }
+
+      });
+
+  }
+
+
+  /* =====================================================
+     ESCUTA UM CASO EM TEMPO REAL
+     ===================================================== */
+
+  function carregarCaso(numeroCaso) {
+
+    casoAtual = numeroCaso;
+
+
+    document
+      .querySelectorAll(".botao-caso")
+      .forEach(botao => {
+
+        botao.classList.toggle(
+          "ativo",
+          Number(botao.dataset.caso) === numeroCaso
+        );
+
+      });
+
+
+    rotuloCaso.textContent =
+      `CASO ${numeroCaso}`;
+
+
+    tituloCaso.textContent =
+      casos[numeroCaso].nome;
+
+
+    atualizarResultados(null);
+
+
+    if (cancelarEscuta) {
+      cancelarEscuta();
+    }
+
+
+    const casoRef =
+      ref(
+        database,
+        `votos/caso${numeroCaso}`
+      );
+
+
+    cancelarEscuta =
+      onValue(
+        casoRef,
+
+        snapshot => {
+
+          atualizarResultados(
+            snapshot.val()
+          );
+
+        },
+
+        erro => {
+
+          console.error(
+            "Erro ao carregar votos:",
+            erro
+          );
+
+          statusTexto.textContent =
+            "Erro ao receber os resultados.";
+
+          statusBolinha.classList.remove(
+            "online"
+          );
+
+        }
+      );
+
+  }
+
+
+  /* =====================================================
+     BOTÕES DOS CASOS
+     ===================================================== */
+
+  document
+    .querySelectorAll(".botao-caso")
+    .forEach(botao => {
+
+      botao.addEventListener(
+        "click",
+        () => {
+
+          carregarCaso(
+            Number(botao.dataset.caso)
+          );
+
+        }
+      );
+
+    });
+
+
+  /* =====================================================
+     AUTENTICAÇÃO
+     ===================================================== */
+
+  onAuthStateChanged(
+    auth,
+    usuario => {
+
+      if (usuario) {
+
+        statusTexto.textContent =
+          "Conectado • resultados em tempo real";
+
+        statusBolinha.classList.add(
+          "online"
+        );
+
+        carregarCaso(casoAtual);
+
+      }
+
+    }
+  );
+
+
+  signInAnonymously(auth)
+    .catch(erro => {
+
+      console.error(
+        "Erro de autenticação:",
+        erro
+      );
+
+      statusTexto.textContent =
+        "Não foi possível conectar ao Firebase.";
+
+    });
+
+</script>
+
+</body>
+</html>
